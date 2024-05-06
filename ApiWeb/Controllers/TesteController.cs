@@ -10,8 +10,8 @@ public class TesteController : ControllerBase
     [HttpGet("servidor")]
     public IActionResult TestarServidor()
     {
-        int porta = HttpContext.Connection.LocalPort;
-        RespostaDaApi res = new() { Mensagem = $"O servidor está rodando na porta {porta}.", Sucesso = true };
+        var porta = HttpContext.Connection.LocalPort;
+        var res = new RespostaDaApi { Mensagem = $"O servidor está rodando na porta {porta}.", Sucesso = true };
         return Ok(res);
     }
 }

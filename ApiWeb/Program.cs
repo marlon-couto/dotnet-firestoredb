@@ -1,3 +1,4 @@
+using ApiWeb.Filters;
 using ApiWeb.Middlewares;
 using ApiWeb.Providers;
 using dotenv.net;
@@ -5,7 +6,7 @@ using dotenv.net.Utilities;
 using Google.Cloud.Firestore;
 
 DotEnv.Load();
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new FirestoreDbBuilder
@@ -13,8 +14,11 @@ builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new
     ProjectId = EnvReader.GetStringValue("FIRESTORE_PROJECT_ID")
     , JsonCredentials = File.ReadAllText("Properties/firestoreCredentials.json")
 }.Build()));
-builder.Services.AddControllers();
-WebApplication app = builder.Build();
+builder.Services.AddControllers(opts =>
+{
+    opts.Filters.Add<CancellationTokenExceptionFilter>();
+});
+var app = builder.Build();
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
 // Configure the HTTP request pipeline.

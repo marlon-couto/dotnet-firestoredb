@@ -2,7 +2,6 @@
 using ApiWeb.Helpers;
 using ApiWeb.Models;
 using ApiWeb.Providers;
-using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 
@@ -15,9 +14,9 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CriarUsuario([FromBody] CriarUsuarioDto dto, CancellationToken ct)
     {
-        Usuario usuario = new(dto.Nome);
+        var usuario = new Usuario(dto.Nome);
         await fs.CriarOuAtualizar(usuario, ct);
-        RespostaDaApi<Usuario> res = new()
+        var res = new RespostaDaApi<Usuario>
         {
             Dados = usuario, Mensagem = "Usuário criado com sucesso.", Sucesso = true
         };
@@ -29,9 +28,9 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         , [FromQuery] int pagina = 1
         , [FromQuery] int quantidade = 10)
     {
-        Paginacao paginacao = new() { Pagina = pagina, QuantidadePorPagina = quantidade };
-        IReadOnlyCollection<Usuario> usuarios = await fs.ListarTodos<Usuario>(paginacao, ct);
-        RespostaDaApiPaginada<IReadOnlyCollection<Usuario>> res = new()
+        var paginacao = new Paginacao() { Pagina = pagina, QuantidadePorPagina = quantidade };
+        var usuarios = await fs.ListarTodos<Usuario>(paginacao, ct);
+        var res = new RespostaDaApiPaginada<IReadOnlyCollection<Usuario>>
         {
             Dados = usuarios
             , Mensagem = "Usuários listados com sucesso."
@@ -47,8 +46,8 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
     [HttpGet("{usuarioId:guid}")]
     public async Task<IActionResult> BuscarUsuarioPorId([FromRoute] Guid usuarioId, CancellationToken ct)
     {
-        Usuario usuario = await fs.BuscarPorId<Usuario>(usuarioId.ToString("N"), ct);
-        RespostaDaApi<Usuario> res = new()
+        var usuario = await fs.BuscarPorId<Usuario>(usuarioId.ToString("N"), ct);
+        var res = new RespostaDaApi<Usuario>
         {
             Dados = usuario, Mensagem = "Usuário encontrado com sucesso.", Sucesso = true
         };
@@ -61,16 +60,16 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         , [FromQuery] int pagina = 1
         , [FromQuery] int quantidade = 10)
     {
-        string termoFormatado
+        var termoFormatado
             = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(termoDeBusca.Replace('%', ' ').ToLower());
-        BuscaDeEntidadesPorCampoDto buscaDto = new()
+        var buscaDto = new BuscaDeEntidadesPorCampoDto
         {
             Campo = nameof(Usuario.Nome)
             , Valor = termoFormatado
             , Paginacao = new Paginacao { Pagina = pagina, QuantidadePorPagina = quantidade }
         };
-        IReadOnlyCollection<Usuario> usuarios = await fs.ListarSemelhantes<Usuario>(buscaDto, ct);
-        RespostaDaApiPaginada<IReadOnlyCollection<Usuario>> res = new()
+        var usuarios = await fs.ListarSemelhantes<Usuario>(buscaDto, ct);
+        var res = new RespostaDaApiPaginada<IReadOnlyCollection<Usuario>>
         {
             Dados = usuarios
             , Mensagem = "Usuários encontrados com sucesso."
@@ -88,10 +87,10 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         , [FromBody] AtualizarUsuarioDto dto
         , CancellationToken ct)
     {
-        DocumentReference doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
-        Usuario usuarioAtualizado = new(usuarioId, dto.Nome);
+        var doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
+        var usuarioAtualizado = new Usuario(usuarioId, dto.Nome);
         await fs.CriarOuAtualizar(usuarioAtualizado, doc, ct);
-        RespostaDaApi<Usuario> res = new()
+        var res = new RespostaDaApi<Usuario>()
         {
             Dados = usuarioAtualizado, Mensagem = "Usuário atualizado com sucesso.", Sucesso = true
         };
@@ -101,9 +100,9 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
     [HttpDelete("{usuarioId:guid}")]
     public async Task<IActionResult> ExcluirUsuario([FromRoute] Guid usuarioId, CancellationToken ct)
     {
-        DocumentReference doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
+        var doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
         await fs.Excluir(doc, ct);
-        RespostaDaApi res = new() { Mensagem = "Usuário excluído com sucesso.", Sucesso = true };
+        var res = new RespostaDaApi { Mensagem = "Usuário excluído com sucesso.", Sucesso = true };
         return Ok(res);
     }
 }

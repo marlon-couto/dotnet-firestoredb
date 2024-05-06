@@ -14,19 +14,19 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
         catch (UnauthorizedAccessException)
         {
             ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            RespostaDaApi res = new() { Mensagem = "Acesso não autorizado." };
+            var res = new RespostaDaApi { Mensagem = "Acesso não autorizado." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException e)
         {
             ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-            RespostaDaApi res = new() { Mensagem = "Operação cancelada." };
+            var res = new RespostaDaApi { Mensagem = e.Message };
             await ctx.Response.WriteAsJsonAsync(res);
         }
         catch (NaoEncontradoException e)
         {
             ctx.Response.StatusCode = StatusCodes.Status404NotFound;
-            RespostaDaApi res = new() { Mensagem = e.Message };
+            var res = new RespostaDaApi { Mensagem = e.Message };
             await ctx.Response.WriteAsJsonAsync(res);
         }
         catch (Exception e)
@@ -35,7 +35,7 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
             ImprimirErroNoConsole(e);
 #endif
             ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            RespostaDaApi res = new() { Mensagem = "Um erro aconteceu ao processar sua requisição." };
+            var res = new RespostaDaApi { Mensagem = "Um erro aconteceu ao processar sua requisição." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
     }
