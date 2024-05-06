@@ -17,10 +17,10 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
             RespostaDaApi res = new() { Mensagem = "Acesso não autorizado." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException)
         {
             ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-            RespostaDaApi res = new() { Mensagem = "Operação cancelada pelo usuário." };
+            RespostaDaApi res = new() { Mensagem = "Operação cancelada." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
         catch (NaoEncontradoException e)
@@ -32,16 +32,22 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
         catch (Exception e)
         {
 #if DEBUG
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Tipo de exceção: " + e.GetType());
-            Console.ResetColor();
-            Console.WriteLine("Erro: " + e.Message);
-            Console.WriteLine("Stacktrace:");
-            Console.WriteLine(e.StackTrace);
+            ImprimirErroNoConsole(e);
 #endif
             ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
             RespostaDaApi res = new() { Mensagem = "Um erro aconteceu ao processar sua requisição." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
+    }
+
+    private static void ImprimirErroNoConsole(Exception excecao)
+    {
+        Console.Write("Tipo de exceção: ");
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(excecao.GetType());
+        Console.ResetColor();
+        Console.WriteLine("Erro: " + excecao.Message);
+        Console.WriteLine("Stacktrace:");
+        Console.WriteLine(excecao.StackTrace);
     }
 }
