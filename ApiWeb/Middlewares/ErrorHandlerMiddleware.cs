@@ -32,8 +32,11 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
         catch (Exception e)
         {
 #if DEBUG
-            Console.WriteLine(e.GetType());
-            Console.WriteLine(e.Message);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Tipo de exceção: " + e.GetType());
+            Console.ResetColor();
+            Console.WriteLine("Erro: " + e.Message);
+            Console.WriteLine("Stacktrace:");
             Console.WriteLine(e.StackTrace);
 #endif
             ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
