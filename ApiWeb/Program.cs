@@ -13,6 +13,7 @@ builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new
     ProjectId = EnvReader.GetStringValue("FIRESTORE_PROJECT_ID")
     , JsonCredentials = File.ReadAllText("Properties/firestoreCredentials.json")
 }.Build()));
+
 builder.Services.AddControllers();
 var app = builder.Build();
 app.UseMiddleware<ErrorHandlerMiddleware>();

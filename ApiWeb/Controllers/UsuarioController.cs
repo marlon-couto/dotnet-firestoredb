@@ -20,14 +20,16 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         {
             Dados = usuario, Mensagem = "Usuário criado com sucesso.", Sucesso = true
         };
+
         return Created($"api/usuario/{usuario.Id}", res);
     }
 
     [HttpGet]
     public async Task<IActionResult> ListarTodosUsuarios([FromQuery] int pagina = 1, [FromQuery] int quantidade = 10)
     {
-        var paginacao = new Paginacao { Pagina = pagina, QuantidadePorPagina = quantidade };
-        var usuarios = await fs.ListarTodos<Usuario>(paginacao);
+        var usuarios
+            = await fs.ListarTodos<Usuario>(new Paginacao { Pagina = pagina, QuantidadePorPagina = quantidade });
+
         var res = new RespostaDaApiPaginada<IReadOnlyCollection<Usuario>>
         {
             Dados = usuarios
@@ -38,6 +40,7 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
                 Pagina = pagina, QuantidadePorPagina = quantidade, Total = usuarios.Count
             }
         };
+
         return Ok(res);
     }
 
@@ -49,6 +52,7 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         {
             Dados = usuario, Mensagem = "Usuário encontrado com sucesso.", Sucesso = true
         };
+
         return Ok(res);
     }
 
@@ -59,12 +63,14 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
     {
         var termoFormatado
             = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(termoDeBusca.Replace('%', ' ').ToLower());
+
         var buscaDto = new BuscaDeEntidadesPorCampoDto
         {
             Campo = nameof(Usuario.Nome)
             , Valor = termoFormatado
             , Paginacao = new Paginacao { Pagina = pagina, QuantidadePorPagina = quantidade }
         };
+
         var usuarios = await fs.ListarSemelhantes<Usuario>(buscaDto);
         var res = new RespostaDaApiPaginada<IReadOnlyCollection<Usuario>>
         {
@@ -76,6 +82,7 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
                 Pagina = pagina, QuantidadePorPagina = quantidade, Total = usuarios.Count
             }
         };
+
         return Ok(res);
     }
 
@@ -89,6 +96,7 @@ public class UsuarioController(IFirestoreProvider fs) : ControllerBase
         {
             Dados = usuarioAtualizado, Mensagem = "Usuário atualizado com sucesso.", Sucesso = true
         };
+
         return Ok(res);
     }
 

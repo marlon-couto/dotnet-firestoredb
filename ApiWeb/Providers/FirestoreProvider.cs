@@ -74,6 +74,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         var query = colecao.OrderBy(FieldPath.DocumentId)
             .StartAt(pontoInicial.ToString())
             .Limit(paginacao.QuantidadePorPagina);
+
         var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
@@ -92,6 +93,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
             .OrderBy(buscaDto.Campo)
             .StartAt(pontoInicial.ToString())
             .Limit(buscaDto.Paginacao.QuantidadePorPagina);
+
         var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
@@ -112,6 +114,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
             .OrderBy(buscaDto.Campo)
             .StartAt(pontoInicial.ToString())
             .Limit(buscaDto.Paginacao.QuantidadePorPagina);
+
         var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
