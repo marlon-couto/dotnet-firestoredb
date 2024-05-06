@@ -1,4 +1,3 @@
-using ApiWeb.Filters;
 using ApiWeb.Middlewares;
 using ApiWeb.Providers;
 using dotenv.net;
@@ -14,10 +13,7 @@ builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new
     ProjectId = EnvReader.GetStringValue("FIRESTORE_PROJECT_ID")
     , JsonCredentials = File.ReadAllText("Properties/firestoreCredentials.json")
 }.Build()));
-builder.Services.AddControllers(opts =>
-{
-    opts.Filters.Add<CancellationTokenExceptionFilter>();
-});
+builder.Services.AddControllers();
 var app = builder.Build();
 app.UseMiddleware<ErrorHandlerMiddleware>();
 

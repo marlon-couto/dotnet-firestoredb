@@ -20,7 +20,7 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
         catch (OperationCanceledException e)
         {
             ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var res = new RespostaDaApi { Mensagem = e.Message };
+            var res = new RespostaDaApi { Mensagem = "Operação cancelada." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
         catch (NaoEncontradoException e)

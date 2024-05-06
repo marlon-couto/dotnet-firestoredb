@@ -8,23 +8,21 @@ namespace ApiWeb.Providers;
 
 public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
 {
-    public async Task CriarOuAtualizar<T>(T entidade, CancellationToken ct) where T : IEntidadeDoFirebase
+    public async Task CriarOuAtualizar<T>(T entidade) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(entidade.Id);
-        await doc.SetAsync(entidade, cancellationToken: ct);
+        await doc.SetAsync(entidade);
     }
 
-    public async Task CriarOuAtualizar<T>(T entidade, DocumentReference doc, CancellationToken ct)
-        where T : IEntidadeDoFirebase
+    public async Task CriarOuAtualizar<T>(T entidade, DocumentReference doc) where T : IEntidadeDoFirebase
     {
-        await doc.SetAsync(entidade, cancellationToken: ct);
+        await doc.SetAsync(entidade);
     }
 
-    public async Task<DocumentReference> BuscarDocumento<T>(string id, CancellationToken ct)
-        where T : IEntidadeDoFirebase
+    public async Task<DocumentReference> BuscarDocumento<T>(string id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id);
-        var snapshot = await doc.GetSnapshotAsync(ct);
+        var snapshot = await doc.GetSnapshotAsync();
         if (!snapshot.Exists)
         {
             throw new NaoEncontradoException($"Entidade \"{typeof(T).Name}\" não encontrada.");
@@ -33,11 +31,10 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return doc;
     }
 
-    public async Task<DocumentReference> BuscarDocumento<T>(Guid id, CancellationToken ct)
-        where T : IEntidadeDoFirebase
+    public async Task<DocumentReference> BuscarDocumento<T>(Guid id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id.ToString("N"));
-        var snapshot = await doc.GetSnapshotAsync(ct);
+        var snapshot = await doc.GetSnapshotAsync();
         if (!snapshot.Exists)
         {
             throw new NaoEncontradoException($"Entidade \"{typeof(T).Name}\" não encontrada.");
@@ -46,10 +43,10 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return doc;
     }
 
-    public async Task<T> BuscarPorId<T>(string id, CancellationToken ct) where T : IEntidadeDoFirebase
+    public async Task<T> BuscarPorId<T>(string id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id);
-        var snapshot = await doc.GetSnapshotAsync(ct);
+        var snapshot = await doc.GetSnapshotAsync();
         if (!snapshot.Exists)
         {
             throw new NaoEncontradoException($"Entidade \"{typeof(T).Name}\" não encontrada.");
@@ -58,10 +55,10 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.ConvertTo<T>();
     }
 
-    public async Task<T> BuscarPorId<T>(Guid id, CancellationToken ct) where T : IEntidadeDoFirebase
+    public async Task<T> BuscarPorId<T>(Guid id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id.ToString("N"));
-        var snapshot = await doc.GetSnapshotAsync(ct);
+        var snapshot = await doc.GetSnapshotAsync();
         if (!snapshot.Exists)
         {
             throw new NaoEncontradoException($"Entidade \"{typeof(T).Name}\" não encontrada.");
@@ -70,15 +67,14 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.ConvertTo<T>();
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarTodos<T>(Paginacao paginacao, CancellationToken ct)
-        where T : IEntidadeDoFirebase
+    public async Task<IReadOnlyCollection<T>> ListarTodos<T>(Paginacao paginacao) where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
         var pontoInicial = (paginacao.Pagina - 1) * paginacao.QuantidadePorPagina;
         var query = colecao.OrderBy(FieldPath.DocumentId)
             .StartAt(pontoInicial.ToString())
             .Limit(paginacao.QuantidadePorPagina);
-        var snapshot = await query.GetSnapshotAsync(ct);
+        var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
             throw new NaoEncontradoException($"Nenhuma entidade \"{typeof(T).Name}\" encontrada.");
@@ -87,8 +83,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarIguais<T>(BuscaDeEntidadesPorCampoDto buscaDto
-        , CancellationToken ct)
+    public async Task<IReadOnlyCollection<T>> ListarIguais<T>(BuscaDeEntidadesPorCampoDto buscaDto)
         where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
@@ -97,7 +92,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
             .OrderBy(buscaDto.Campo)
             .StartAt(pontoInicial.ToString())
             .Limit(buscaDto.Paginacao.QuantidadePorPagina);
-        var snapshot = await query.GetSnapshotAsync(ct);
+        var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
             throw new NaoEncontradoException(
@@ -107,8 +102,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarSemelhantes<T>(BuscaDeEntidadesPorCampoDto buscaDto
-        , CancellationToken ct)
+    public async Task<IReadOnlyCollection<T>> ListarSemelhantes<T>(BuscaDeEntidadesPorCampoDto buscaDto)
         where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
@@ -118,7 +112,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
             .OrderBy(buscaDto.Campo)
             .StartAt(pontoInicial.ToString())
             .Limit(buscaDto.Paginacao.QuantidadePorPagina);
-        var snapshot = await query.GetSnapshotAsync(ct);
+        var snapshot = await query.GetSnapshotAsync();
         if (snapshot.Count == 0)
         {
             throw new NaoEncontradoException(
@@ -128,20 +122,20 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
     }
 
-    public async Task Excluir<T>(string id, CancellationToken ct) where T : IEntidadeDoFirebase
+    public async Task Excluir<T>(string id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id);
-        await doc.DeleteAsync(cancellationToken: ct);
+        await doc.DeleteAsync();
     }
 
-    public async Task Excluir<T>(Guid id, CancellationToken ct) where T : IEntidadeDoFirebase
+    public async Task Excluir<T>(Guid id) where T : IEntidadeDoFirebase
     {
         var doc = db.Collection(typeof(T).Name).Document(id.ToString("N"));
-        await doc.DeleteAsync(cancellationToken: ct);
+        await doc.DeleteAsync();
     }
 
-    public async Task Excluir(DocumentReference doc, CancellationToken ct)
+    public async Task Excluir(DocumentReference doc)
     {
-        await doc.DeleteAsync(cancellationToken: ct);
+        await doc.DeleteAsync();
     }
 }
