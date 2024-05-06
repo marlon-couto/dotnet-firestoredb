@@ -8,7 +8,7 @@ DotEnv.Load();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddSingleton(_ => new FirestoreProvider(new FirestoreDbBuilder
+builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new FirestoreDbBuilder
 {
     ProjectId = EnvReader.GetStringValue("FIRESTORE_PROJECT_ID")
     , JsonCredentials = File.ReadAllText("Properties/firestoreCredentials.json")

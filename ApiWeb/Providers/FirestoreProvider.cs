@@ -6,7 +6,7 @@ using Google.Cloud.Firestore;
 
 namespace ApiWeb.Providers;
 
-public class FirestoreProvider(FirestoreDb db)
+public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
 {
     public async Task CriarOuAtualizar<T>(T entidade, CancellationToken ct) where T : IEntidadeDoFirebase
     {

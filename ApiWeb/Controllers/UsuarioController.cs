@@ -10,7 +10,7 @@ namespace ApiWeb.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsuarioController(FirestoreProvider fs) : ControllerBase
+public class UsuarioController(IFirestoreProvider fs) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> CriarUsuario([FromBody] CriarUsuarioDto dto, CancellationToken ct)
