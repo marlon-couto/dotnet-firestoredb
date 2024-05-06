@@ -1,8 +1,8 @@
 ﻿using ApiWeb.Dtos;
-using ApiWeb.Exceptions;
 using ApiWeb.Helpers;
 using ApiWeb.Models;
 using ApiWeb.Providers;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 
@@ -21,7 +21,7 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
         {
             Dados = usuario, Mensagem = "Usuário criado com sucesso.", Sucesso = true
         };
-        return Created(string.Empty, res);
+        return Created($"api/usuario/{usuario.Id}", res);
     }
 
     [HttpGet]
@@ -29,10 +29,17 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
         , [FromQuery] int pagina = 1
         , [FromQuery] int quantidade = 10)
     {
-        IReadOnlyCollection<Usuario> usuarios = await fs.ListarTodos<Usuario>(pagina, quantidade, ct);
-        RespostaDaApi<IReadOnlyCollection<Usuario>> res = new()
+        Paginacao paginacao = new() { Pagina = pagina, QuantidadePorPagina = quantidade };
+        IReadOnlyCollection<Usuario> usuarios = await fs.ListarTodos<Usuario>(paginacao, ct);
+        RespostaDaApiPaginada<IReadOnlyCollection<Usuario>> res = new()
         {
-            Dados = usuarios, Mensagem = "Usuários listados com sucesso.", Sucesso = true
+            Dados = usuarios
+            , Mensagem = "Usuários listados com sucesso."
+            , Sucesso = true
+            , Paginacao = new Paginacao
+            {
+                Pagina = pagina, QuantidadePorPagina = quantidade, Total = usuarios.Count
+            }
         };
         return Ok(res);
     }
@@ -41,11 +48,6 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
     public async Task<IActionResult> BuscarUsuarioPorId([FromRoute] Guid usuarioId, CancellationToken ct)
     {
         Usuario usuario = await fs.BuscarPorId<Usuario>(usuarioId.ToString("N"), ct);
-        if (usuario == null)
-        {
-            throw new NaoEncontradoException("Usuário não encontrado.");
-        }
-
         RespostaDaApi<Usuario> res = new()
         {
             Dados = usuario, Mensagem = "Usuário encontrado com sucesso.", Sucesso = true
@@ -53,22 +55,30 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
         return Ok(res);
     }
 
-    [HttpGet("buscar")]
-    public async Task<IActionResult> BuscarUsuarioPorNome([FromQuery(Name = "nome")] string termoDeBusca
-        , CancellationToken ct)
+    [HttpGet("buscar-nome/{termoDeBusca}")]
+    public async Task<IActionResult> BuscarUsuariosPorNome([FromRoute] string termoDeBusca
+        , CancellationToken ct
+        , [FromQuery] int pagina = 1
+        , [FromQuery] int quantidade = 10)
     {
         string termoFormatado
             = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(termoDeBusca.Replace('%', ' ').ToLower());
-        IReadOnlyCollection<Usuario> usuarios
-            = await fs.ListarIguaisA<Usuario>(nameof(Usuario.Nome), termoFormatado, ct);
-        if (usuarios.Count == 0)
+        BuscaDeEntidadesPorCampoDto buscaDto = new()
         {
-            throw new NaoEncontradoException("Nenhum usuário encontrado com esse nome.");
-        }
-
-        RespostaDaApi<IReadOnlyCollection<Usuario>> res = new()
+            Campo = nameof(Usuario.Nome)
+            , Valor = termoFormatado
+            , Paginacao = new Paginacao { Pagina = pagina, QuantidadePorPagina = quantidade }
+        };
+        IReadOnlyCollection<Usuario> usuarios = await fs.ListarSemelhantes<Usuario>(buscaDto, ct);
+        RespostaDaApiPaginada<IReadOnlyCollection<Usuario>> res = new()
         {
-            Dados = usuarios, Mensagem = "Usuário encontrado com sucesso.", Sucesso = true
+            Dados = usuarios
+            , Mensagem = "Usuários encontrados com sucesso."
+            , Sucesso = true
+            , Paginacao = new Paginacao
+            {
+                Pagina = pagina, QuantidadePorPagina = quantidade, Total = usuarios.Count
+            }
         };
         return Ok(res);
     }
@@ -78,14 +88,9 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
         , [FromBody] AtualizarUsuarioDto dto
         , CancellationToken ct)
     {
-        Usuario usuario = await fs.BuscarPorId<Usuario>(usuarioId, ct);
-        if (usuario == null)
-        {
-            throw new NaoEncontradoException("Usuário não encontrado.");
-        }
-
+        DocumentReference doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
         Usuario usuarioAtualizado = new(usuarioId, dto.Nome);
-        await fs.CriarOuAtualizar(usuarioAtualizado, ct);
+        await fs.CriarOuAtualizar(usuarioAtualizado, doc, ct);
         RespostaDaApi<Usuario> res = new()
         {
             Dados = usuarioAtualizado, Mensagem = "Usuário atualizado com sucesso.", Sucesso = true
@@ -96,13 +101,8 @@ public class UsuarioController(FirestoreProvider fs) : ControllerBase
     [HttpDelete("{usuarioId:guid}")]
     public async Task<IActionResult> ExcluirUsuario([FromRoute] Guid usuarioId, CancellationToken ct)
     {
-        Usuario usuario = await fs.BuscarPorId<Usuario>(usuarioId, ct);
-        if (usuario == null)
-        {
-            throw new NaoEncontradoException("Usuário não encontrado.");
-        }
-
-        await fs.Excluir<Usuario>(usuarioId, ct);
+        DocumentReference doc = await fs.BuscarDocumento<Usuario>(usuarioId, ct);
+        await fs.Excluir(doc, ct);
         RespostaDaApi res = new() { Mensagem = "Usuário excluído com sucesso.", Sucesso = true };
         return Ok(res);
     }
