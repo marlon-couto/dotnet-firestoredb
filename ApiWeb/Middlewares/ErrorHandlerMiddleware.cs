@@ -17,7 +17,7 @@ public class ErrorHandlerMiddleware(RequestDelegate next)
             var res = new RespostaDaApi { Mensagem = "Acesso não autorizado." };
             await ctx.Response.WriteAsJsonAsync(res);
         }
-        catch (OperationCanceledException e)
+        catch (OperationCanceledException)
         {
             ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
             var res = new RespostaDaApi { Mensagem = "Operação cancelada." };

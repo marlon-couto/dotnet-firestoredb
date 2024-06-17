@@ -1,6 +1,4 @@
-﻿using ApiWeb.Dtos;
-using ApiWeb.Exceptions;
-using ApiWeb.Helpers;
+﻿using ApiWeb.Exceptions;
 using ApiWeb.Models;
 using Google.Cloud.Firestore;
 
@@ -14,7 +12,7 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         await doc.SetAsync(entidade);
     }
 
-    public async Task CriarOuAtualizar<T>(T entidade, DocumentReference doc) where T : IEntidadeDoFirebase
+    public async Task Atualizar<T>(T entidade, DocumentReference doc) where T : IEntidadeDoFirebase
     {
         await doc.SetAsync(entidade);
     }
@@ -67,62 +65,101 @@ public class FirestoreProvider(FirestoreDb db) : IFirestoreProvider
         return snapshot.ConvertTo<T>();
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarTodos<T>(Paginacao paginacao) where T : IEntidadeDoFirebase
+    public async Task<(List<T> docs, int contagem)> ListarTodos<T>(int pagina = 1, int quantidadePorPagina = 10)
+        where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
-        var pontoInicial = (paginacao.Pagina - 1) * paginacao.QuantidadePorPagina;
-        var query = colecao.OrderBy(FieldPath.DocumentId)
-            .StartAt(pontoInicial.ToString())
-            .Limit(paginacao.QuantidadePorPagina);
-
-        var snapshot = await query.GetSnapshotAsync();
-        if (snapshot.Count == 0)
+        var contagem = (await colecao.GetSnapshotAsync()).Count;
+        if (contagem == 0)
         {
             throw new NaoEncontradoException($"Nenhuma entidade \"{typeof(T).Name}\" encontrada.");
         }
 
-        return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        var pontoInicial = pagina * quantidadePorPagina;
+        var query = colecao.OrderBy(FieldPath.DocumentId)
+            .StartAt(pontoInicial.ToString())
+            .Limit(quantidadePorPagina);
+
+        var snapshot = await query.GetSnapshotAsync();
+        var docs = snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        return (docs, contagem);
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarIguais<T>(BuscaDeEntidadesPorCampoDto buscaDto)
+    public async Task<(List<T> docs, int contagem)> ListarIguais<T>(string campo
+        , object valor
+        , int pagina = 1
+        , int quantidadePorPagina = 10)
         where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
-        var pontoInicial = (buscaDto.Paginacao.Pagina - 1) * buscaDto.Paginacao.QuantidadePorPagina;
-        var query = colecao.WhereEqualTo(buscaDto.Campo, buscaDto.Valor)
-            .OrderBy(buscaDto.Campo)
-            .StartAt(pontoInicial.ToString())
-            .Limit(buscaDto.Paginacao.QuantidadePorPagina);
-
-        var snapshot = await query.GetSnapshotAsync();
-        if (snapshot.Count == 0)
+        var query = colecao.WhereEqualTo(campo, valor);
+        var contagem = (await query.GetSnapshotAsync()).Count;
+        if (contagem == 0)
         {
             throw new NaoEncontradoException(
                 $"Nenhuma entidade \"{typeof(T).Name}\" encontrada com esses critérios de busca.");
         }
 
-        return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        var pontoInicial = pagina * quantidadePorPagina;
+        var snapshot = await query.OrderBy(campo)
+            .StartAt(pontoInicial.ToString())
+            .Limit(quantidadePorPagina)
+            .GetSnapshotAsync();
+
+        var docs = snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        return (docs, contagem);
     }
 
-    public async Task<IReadOnlyCollection<T>> ListarSemelhantes<T>(BuscaDeEntidadesPorCampoDto buscaDto)
+    public async Task<(List<T> docs, int contagem)> ListarSemelhantes<T>(string campo
+        , string valor
+        , int pagina = 1
+        , int quantidadePorPagina = 10)
         where T : IEntidadeDoFirebase
     {
         var colecao = db.Collection(typeof(T).Name);
-        var pontoInicial = (buscaDto.Paginacao.Pagina - 1) * buscaDto.Paginacao.QuantidadePorPagina;
-        var query = colecao.WhereGreaterThanOrEqualTo(buscaDto.Campo, buscaDto.Valor)
-            .WhereLessThanOrEqualTo(buscaDto.Campo, buscaDto.Valor + "\uf8ff")
-            .OrderBy(buscaDto.Campo)
-            .StartAt(pontoInicial.ToString())
-            .Limit(buscaDto.Paginacao.QuantidadePorPagina);
+        var pontoInicial = pagina * quantidadePorPagina;
+        var query = colecao.WhereGreaterThanOrEqualTo(campo, valor)
+            .WhereLessThanOrEqualTo(campo, valor.Replace('%', ' ') + "\uf8ff");
 
-        var snapshot = await query.GetSnapshotAsync();
-        if (snapshot.Count == 0)
+        var contagem = (await query.GetSnapshotAsync()).Count;
+        if (contagem == 0)
         {
             throw new NaoEncontradoException(
                 $"Nenhuma entidade \"{typeof(T).Name}\" encontrada com esses critérios de busca.");
         }
 
-        return snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        var snapshot = await query.OrderBy(campo)
+            .StartAt(pontoInicial.ToString())
+            .Limit(quantidadePorPagina)
+            .GetSnapshotAsync();
+
+        var docs = snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        return (docs, contagem);
+    }
+
+    public async Task<(List<T> docs, int contagem)> ListarSemelhantesEmArray<T>(string campo
+        , string valor
+        , int pagina = 1
+        , int quantidadePorPagina = 10)
+        where T : IEntidadeDoFirebase
+    {
+        var colecao = db.Collection(typeof(T).Name);
+        var pontoInicial = pagina * quantidadePorPagina;
+        var query = colecao.WhereArrayContains(campo, valor.Replace('%', ' '));
+        var contagem = (await query.GetSnapshotAsync()).Count;
+        if (contagem == 0)
+        {
+            throw new NaoEncontradoException(
+                $"Nenhuma entidade \"{typeof(T).Name}\" encontrada com esses critérios de busca.");
+        }
+
+        var snapshot = await query.OrderBy(campo)
+            .StartAt(pontoInicial.ToString())
+            .Limit(quantidadePorPagina)
+            .GetSnapshotAsync();
+
+        var docs = snapshot.Documents.Select(x => x.ConvertTo<T>()).ToList();
+        return (docs, contagem);
     }
 
     public async Task Excluir<T>(string id) where T : IEntidadeDoFirebase

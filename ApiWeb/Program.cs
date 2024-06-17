@@ -1,19 +1,17 @@
+using ApiWeb.Config;
+using ApiWeb.Extensions;
 using ApiWeb.Middlewares;
 using ApiWeb.Providers;
 using dotenv.net;
-using dotenv.net.Utilities;
-using Google.Cloud.Firestore;
 
 DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddSingleton<IFirestoreProvider>(_ => new FirestoreProvider(new FirestoreDbBuilder
-{
-    ProjectId = EnvReader.GetStringValue("FIRESTORE_PROJECT_ID")
-    , JsonCredentials = File.ReadAllText("Properties/firestoreCredentials.json")
-}.Build()));
+builder.Services.AddSingleton<IFirestoreProvider, FirestoreProvider>(_ =>
+    new FirestoreProvider(new FirestoreDatabase().Db));
 
+builder.Services.AdicionarInjecaoDeDependencias();
 builder.Services.AddControllers();
 var app = builder.Build();
 app.UseMiddleware<ErrorHandlerMiddleware>();

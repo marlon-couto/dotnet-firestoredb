@@ -1,27 +1,20 @@
 ﻿using Google.Cloud.Firestore;
+using System.Globalization;
 
 namespace ApiWeb.Models;
 
 [FirestoreData]
 public class Usuario : IEntidadeDoFirebase
 {
-    public Usuario()
+    private string _id = Guid.NewGuid().ToString("N");
+    private string _nome = string.Empty;
+
+    [FirestoreProperty]
+    public string Nome
     {
+        get => _nome;
+        set => _nome = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(value.ToLower());
     }
 
-    public Usuario(string nome)
-    {
-        Nome = nome;
-        Id = Guid.NewGuid().ToString("N"); // gera um GUID sem hífens 
-    }
-
-    public Usuario(Guid id, string nome)
-    {
-        Id = id.ToString("N");
-        Nome = nome;
-    }
-
-    [FirestoreProperty] public string Nome { get; set; } = string.Empty;
-
-    [FirestoreProperty] public string Id { get; set; } = string.Empty;
+    [FirestoreProperty] public string Id { get => _id; set => _id = Guid.Parse(value).ToString("N"); }
 }

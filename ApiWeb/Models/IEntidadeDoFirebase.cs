@@ -2,5 +2,5 @@
 
 public interface IEntidadeDoFirebase
 {
-    public string Id { get; set; }
+    string Id { get; set; }
 }
